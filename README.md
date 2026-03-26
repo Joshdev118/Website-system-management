@@ -7,7 +7,7 @@ Enter this link on google to access the website:
 http://localhost/Website (Building)/index.php
 
 
-Just in case if you guys wanted to proceed with working with github, you need to learn how to push your own updated code to the main code in here
+Just in case if you guys wanted to proceed with working with github, you need to learn how to push your own updated code to your own branch in here with the command prompt
 
 1. To locate your project folder first:   cd C:\xampp\htdocs\Website (Building)
 2. Add the your own code first:      git add .

@@ -1,4 +1,16 @@
-<?php include 'db.php'; ?>
+<?php 
+include 'db.php'; 
+session_start();
+
+// Check if logged in AND if they are an admin
+if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] != 1) {
+    // Not an admin! Redirect to home or show an error
+    header("Location: AdminSecurity.html");
+    exit();
+}
+
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>

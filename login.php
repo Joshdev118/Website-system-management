@@ -13,9 +13,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         // Login successful! Save user info in the session
         $_SESSION['user_id'] = $user['id'];
         $_SESSION['username'] = $user['username'];
+        $_SESSION['user_type'] = $user['user_type'];
         
-        header("Location: index.php");
+        // Redirect based on role
+        if ($_SESSION['user_type'] == 1) {
+            header("Location: Admin/admin.php");
+        } else {
+            header("Location: index.php");
+        }   
         exit();
+
     } else {
         $error = "Invalid email or password.";
     }

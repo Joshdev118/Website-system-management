@@ -21,6 +21,14 @@
 </head>
 <body>
 
+    <nav>
+        <a href="index.php">Home</a>
+        <a href="Admin/admin.php">Admin Dashboard</a>
+        <a href="my_items.php">My Items</a>
+        <a href="login.php">Login</a>
+        <a href="logout.php">Logout</a>
+    </nav>
+
     <h1>Second Hand Items For Sale</h1>
     <div style="text-align: center; margin-bottom: 30px;">
         <a href="upload.php" style="text-decoration: none; color: #007bff; font-weight: bold;">+ Sell Your Own Item</a>

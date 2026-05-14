@@ -16,21 +16,27 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] != 1) {
 <head>
     <meta charset="UTF-8">
     <title>Admin - Manage Items</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
-        th { background-color: #333; color: white; }
-        tr:nth-child(even) { background-color: #f9f9f9; }
-        .img-preview { width: 60px; height: 60px; object-fit: cover; border-radius: 4px; }
-        .status-msg { color: green; font-weight: bold; }
-    </style>
+    <link rel="stylesheet" href="css/admin.css">
 </head>
 <body>
+    <div class="container">
+        <div class="topbar">
+            <div>
+                <h2>Admin Database Management</h2>
+                <p>Below is the list of all items currently stored in the system.</p>
+            </div>
+            <div class="actions">
+                <a class="btn" href="index.php">← Back to Store</a>
+                <button type="button" class="theme-toggle" id="themeToggle">Toggle Light Mode</button>
+            </div>
+        </div>
 
-    <h2>Admin Database Management</h2>
-    <p>Below is the list of all items currently stored in the system.</p>
-    <a href="upload.php">← Back to Store</a>
+        <div class="topbar" style="margin-top: 0; gap: 1rem;">
+            <div class="search-wrapper">
+                <input type="search" id="searchInput" placeholder="Search by name, description, price or contact...">
+                <span class="search-icon">🔍</span>
+            </div>
+        </div>
 
     <table>
         <thead>
@@ -69,6 +75,35 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] != 1) {
             ?>
         </tbody>
     </table>
+</div>
 
+<script>
+    const searchInput = document.getElementById('searchInput');
+    const rows = document.querySelectorAll('tbody tr');
+    const themeToggle = document.getElementById('themeToggle');
+    const html = document.documentElement;
+
+    function filterTable() {
+        const query = searchInput.value.trim().toLowerCase();
+        rows.forEach(row => {
+            const text = row.textContent.toLowerCase();
+            row.style.display = text.includes(query) ? '' : 'none';
+        });
+    }
+
+    function updateThemeLabel() {
+        const dark = html.classList.contains('light-mode');
+        themeToggle.textContent = dark ? 'Toggle Dark Mode' : 'Toggle Light Mode';
+    }
+
+    searchInput.addEventListener('input', filterTable);
+
+    themeToggle.addEventListener('click', () => {
+        html.classList.toggle('light-mode');
+        updateThemeLabel();
+    });
+
+    updateThemeLabel();
+</script>
 </body>
 </html>

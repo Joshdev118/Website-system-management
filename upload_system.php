@@ -34,11 +34,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         $sql = "INSERT INTO items (item_name, description, price, phone_number, image_path, user_id) 
         VALUES ('$name', '$desc', '$price', '$phone', '$image_name', '$user_id')";
-        
+
 
         if (mysqli_query($conn, $sql)) {
             // Success! Redirect back to the marketplace or a success page
-            header("Location: admin.php?upload=success");
+            header("Location: my_items.php?upload=success");
             exit();
         } else {
             echo "Database error: " . mysqli_error($conn);

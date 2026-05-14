@@ -1,6 +1,6 @@
 <?php 
-include 'db.php';
 session_start(); 
+include 'db.php';
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $email = mysqli_real_escape_string($conn, $_POST['email']);
@@ -15,30 +15,61 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $_SESSION['username'] = $user['username'];
         $_SESSION['user_type'] = $user['user_type'];
         
-        // Redirect based on role
-        if ($_SESSION['user_type'] == 1) {
-            header("Location: Admin/admin.php");
-        } else {
-            header("Location: index.php");
-        }   
+        header("Location: index.php");
         exit();
-
     } else {
-        $error = "Invalid email or password.";
+        $error = "You entered the wrong information";
     }
 }
 ?>
 
 <!DOCTYPE html>
-<html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Two Hands Marketplace</title>
+    <link rel="stylesheet" href="css/login.css">
+</head>
 <body>
-    <h2>Login</h2>
-    <?php if(isset($error)) echo "<p style='color:red'>$error</p>"; ?>
-    <form method="POST">
-        <input type="email" name="email" placeholder="Email" required><br><br>
-        <input type="password" name="password" placeholder="Password" required><br><br>
-        <button type="submit">Login</button>
-    </form>
-    <p>New here? <a href="register.php">Register here</a></p>
+    <div class="login-container">
+        <div class="login-box">
+            <h2 class="login-title">Login</h2>
+            
+            <?php if(isset($error)) echo "<p class='error-message'>❌ $error</p>"; ?>
+            
+            <form method="POST" class="login-form">
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <input 
+                        type="email" 
+                        id="email"
+                        name="email" 
+                        placeholder="Enter your email" 
+                        required
+                        class="form-input"
+                    >
+                    <span class="input-hint">Please enter a valid email address</span>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input 
+                        type="password" 
+                        id="password"
+                        name="password" 
+                        placeholder="Enter your password" 
+                        required
+                        class="form-input"
+                    >
+                    <span class="input-hint">Password is required</span>
+                </div>
+
+                <button type="submit" class="login-button">Login Now</button>
+            </form>
+
+            <p class="register-link">New here? <a href="register.php">Register here</a></p>
+        </div>
+    </div>
 </body>
 </html>

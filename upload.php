@@ -26,7 +26,7 @@ if (!isset($_SESSION['user_id'])) {
 
     <nav style="padding: 10px; background: #f4f4f4; margin-bottom: 20px;">
     <a href="index.php" style="margin-right: 15px;">Home</a>
-    <a href="admin.php" style="color: red; font-weight: bold;">Admin Dashboard</a>
+    <a href="Admin/admin.php" style="color: red; font-weight: bold;">Admin Dashboard</a>
 </nav>
 
 <div class="form-container">

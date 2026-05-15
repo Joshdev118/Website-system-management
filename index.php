@@ -348,38 +348,6 @@
             }
         });
 
-        // Theme toggle functionality
-        const themeToggle = document.getElementById('themeToggle');
-        const savedTheme = localStorage.getItem('inventoryTheme') || 'light';
-        document.body.classList.toggle('dark-theme', savedTheme === 'dark');
-        themeToggle.textContent = savedTheme === 'dark' ? '☀️' : '🌙';
-
-        themeToggle.addEventListener('click', function() {
-            const isDark = document.body.classList.toggle('dark-theme');
-            const newTheme = isDark ? 'dark' : 'light';
-            localStorage.setItem('inventoryTheme', newTheme);
-            themeToggle.textContent = isDark ? '☀️' : '🌙';
-        });
-
-        // Profile menu functionality
-        const profileButton = document.querySelector('.profile-button');
-        const profileMenu = document.getElementById('profile-menu');
-
-        profileButton.addEventListener('click', function() {
-            const isExpanded = profileButton.getAttribute('aria-expanded') === 'true';
-            profileButton.setAttribute('aria-expanded', !isExpanded);
-            profileMenu.classList.toggle('open');
-        });
-
-        // Close menu when clicking outside
-        document.addEventListener('click', function(e) {
-            if (!profileButton.contains(e.target) && !profileMenu.contains(e.target)) {
-                profileButton.setAttribute('aria-expanded', 'false');
-                profileMenu.classList.remove('open');
-            }
-        });
-    </script>
-
         // Close modal when clicking outside the dialog
         document.getElementById('imageModal').addEventListener('click', function(event) {
             if (event.target === this) {
@@ -402,7 +370,7 @@
         });
 
         // Profile dropdown and theme functionality
-        document.addEventListener('DOMContentLoaded', function() {
+        (function() {
             var profileButton = document.querySelector('.profile-button');
             var dropdownMenu = document.querySelector('.dropdown-menu');
             var themeToggle = document.getElementById('themeToggle');
@@ -411,10 +379,10 @@
             function applyTheme(theme) {
                 if (theme === 'dark') {
                     document.body.classList.add('dark-theme');
-                    themeToggle.textContent = '☀️';
+                    if (themeToggle) themeToggle.textContent = '☀️';
                 } else {
                     document.body.classList.remove('dark-theme');
-                    themeToggle.textContent = '🌙';
+                    if (themeToggle) themeToggle.textContent = '🌙';
                 }
                 localStorage.setItem('inventoryTheme', theme);
             }
@@ -444,7 +412,7 @@
                     profileButton.setAttribute('aria-expanded', 'false');
                 }
             });
-        });
+        })();
     </script>
 </body>
 </html>

@@ -1,106 +1,142 @@
-<?php 
-include 'db.php'; 
+<?php
+include 'db.php';
 session_start();
 
-// Check if logged in AND if they are an admin
-if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] != 1) {
-    // Not an admin! Redirect to home or show an error
-    header("Location: AdminSecurity.html");
+// Simple admin password check
+$admin_password = 'admin123'; // Change this to your desired password
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['password'])) {
+    if ($_POST['password'] === $admin_password) {
+        $_SESSION['admin_logged_in'] = true;
+    } else {
+        $error = 'Incorrect password.';
+    }
+}
+
+if (!isset($_SESSION['admin_logged_in'])) {
+    // Show password form
+    ?>
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Admin Login</title>
+        <link rel="stylesheet" href="css/admin.css">
+        <style>
+            .login-container {
+                max-width: 400px;
+                margin: 100px auto;
+                padding: 20px;
+                background: var(--surface);
+                border-radius: 10px;
+                box-shadow: 0 10px 30px var(--shadow);
+            }
+            .login-container h2 {
+                text-align: center;
+                margin-bottom: 20px;
+            }
+            .form-group {
+                margin-bottom: 15px;
+            }
+            .form-group label {
+                display: block;
+                margin-bottom: 5px;
+            }
+            .form-group input {
+                width: 100%;
+                padding: 10px;
+                border: 1px solid var(--border);
+                border-radius: 5px;
+                background: var(--surface-muted);
+                color: var(--text-light);
+            }
+            .btn {
+                width: 100%;
+                padding: 10px;
+                background: var(--accent-blue);
+                color: white;
+                border: none;
+                border-radius: 5px;
+                cursor: pointer;
+            }
+            .btn:hover {
+                background: var(--accent-gold);
+            }
+            .error {
+                color: red;
+                text-align: center;
+                margin-bottom: 10px;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="login-container">
+            <h2>Admin Access</h2>
+            <?php if (isset($error)) echo "<p class='error'>$error</p>"; ?>
+            <form method="POST">
+                <div class="form-group">
+                    <label for="password">Admin Password:</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+                <button type="submit" class="btn">Login</button>
+            </form>
+        </div>
+    </body>
+    </html>
+    <?php
     exit();
 }
 
+// If logged in, show admin panel
 ?>
 
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Admin - Manage Items</title>
+    <title>Admin Panel</title>
     <link rel="stylesheet" href="css/admin.css">
 </head>
 <body>
     <div class="container">
         <div class="topbar">
             <div>
-                <h2>Admin Database Management</h2>
-                <p>Below is the list of all items currently stored in the system.</p>
+                <h2>Admin Panel</h2>
+                <p>Welcome to the admin dashboard.</p>
             </div>
             <div class="actions">
                 <a class="btn" href="index.php">← Back to Store</a>
+                <a class="btn" href="?logout=1">Logout</a>
             </div>
         </div>
 
-        <div class="topbar" style="margin-top: 0; gap: 1rem;">
-            <div class="search-wrapper">
-                <input type="search" id="searchInput" placeholder="Search by name, description, price or contact...">
-                <span class="search-icon">🔍</span>
-            </div>
+        <div style="text-align: center; padding: 50px;">
+            <h3>Admin Access Granted</h3>
+            <p>You are now logged in as admin.</p>
+            <!-- Add any admin functions here if needed -->
         </div>
+    </div>
 
-        <table>
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Image</th>
-                <th>Item Name</th>
-                <th>Description</th>
-                <th>Price</th>
-                <th>Contact info</th>
-                <th>Publisher</th>
-                <th>Date Posted</th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php
-            // Fetch all items from the database with publisher info
-            $sql = "SELECT items.*, users.username AS publisher FROM items LEFT JOIN users ON items.user_id = users.id ORDER BY items.id DESC";
-            $result = mysqli_query($conn, $sql);
-
-            if (mysqli_num_rows($result) > 0) {
-                while($row = mysqli_fetch_assoc($result)) {
-                    echo "<tr>";
-                    echo "<td>" . $row['id'] . "</td>";
-                    // Display the image from the uploads folder
-                    echo "<td><img src='uploads/" . $row['image_path'] . "' class='img-preview'></td>";
-                    echo "<td>" . $row['item_name'] . "</td>";
-                    echo "<td>" . $row['description'] . "</td>";
-                    echo "<td>$" . number_format($row['price'], 2) . "</td>";
-                    echo "<td>" . $row['phone_number'] . "</td>";
-                    echo "<td>" . ($row['publisher'] ?? 'Unknown') . "</td>";
-                    echo "<td>" . $row['created_at'] . "</td>";
-                    echo "</tr>";
-                }
+    <script>
+        // Apply saved theme
+        function applySavedTheme() {
+            const savedTheme = localStorage.getItem('inventoryTheme') || 'dark';
+            if (savedTheme === 'light') {
+                document.body.classList.add('light-theme');
             } else {
-                echo "<tr><td colspan='8' style='text-align:center;'>No items found in database.</td></tr>";
+                document.body.classList.remove('light-theme');
             }
-            ?>
-        </tbody>
-    </table>
-</div>
-
-<script>
-    const searchInput = document.getElementById('searchInput');
-    const rows = document.querySelectorAll('tbody tr');
-
-    function filterTable() {
-        const query = searchInput.value.trim().toLowerCase();
-        rows.forEach(row => {
-            const text = row.textContent.toLowerCase();
-            row.style.display = text.includes(query) ? '' : 'none';
-        });
-    }
-
-    function applySavedTheme() {
-        const savedTheme = localStorage.getItem('inventoryTheme') || 'dark';
-        if (savedTheme === 'light') {
-            document.body.classList.add('light-theme');
-        } else {
-            document.body.classList.remove('light-theme');
         }
-    }
-
-    searchInput.addEventListener('input', filterTable);
-    applySavedTheme();
-</script>
+        applySavedTheme();
+    </script>
 </body>
 </html>
+
+<?php
+if (isset($_GET['logout'])) {
+    session_destroy();
+    header("Location: admin.php");
+    exit();
+}
+?>

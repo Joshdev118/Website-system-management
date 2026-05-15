@@ -5,16 +5,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Community Marketplace | Inventory System</title>
+    <title>MarketHub | Buy & Sell Anything</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
     <nav>
         <div class="nav-left">
-            <h2>Community Marketplace</h2>
+            <h2>🏪 MarketHub</h2>
         </div>
         <div class="nav-right">
+            <button id="themeToggle" class="theme-toggle" aria-label="Toggle theme">🌙</button>
             <button type="button" class="profile-button" aria-expanded="false" aria-controls="profile-menu">👤</button>
             <div class="dropdown-menu" id="profile-menu">
                 <a href="index.php">Home</a>
@@ -26,20 +27,51 @@
         </div>
     </nav>
 
-    <h1>System Inventory Marketplace</h1>
-    
-    <div class="upload-link">
-        <a href="upload.php" class="btn-primary">+ Register New Asset</a>
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <h1>Discover Amazing Products</h1>
+            <p>Buy and sell quality items in your community. Connect with local sellers and find exactly what you need.</p>
+            <a href="#marketplace" class="btn-primary btn-large">Explore Products</a>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features">
+        <div class="feature-card">
+            <div class="feature-icon">📦</div>
+            <h3>Wide Selection</h3>
+            <p>Thousands of products from local sellers, all in one place.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">💰</div>
+            <h3>Great Prices</h3>
+            <p>Direct from sellers - no middlemen, just fair pricing.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">👥</div>
+            <h3>Local Community</h3>
+            <p>Connect with sellers near you and support local business.</p>
+        </div>
+    </section>
+
+    <!-- Search Section -->
+    <div class="search-section" id="marketplace">
+        <div class="search-container">
+            <form method="GET" action="index.php">
+                <input type="text" name="search" placeholder="Search for products..." value="<?php echo isset($_GET['search']) ? htmlspecialchars($_GET['search']) : ''; ?>">
+                <button type="submit" class="btn-search">Search</button>
+            </form>
+        </div>
+        <div class="upload-link">
+            <a href="upload.php" class="btn-primary">+ List Your Item</a>
+        </div>
     </div>
 
-    <div class="search-container">
-        <form method="GET" action="index.php">
-            <input type="text" name="search" placeholder="Search items..." value="<?php echo isset($_GET['search']) ? htmlspecialchars($_GET['search']) : ''; ?>">
-            <button type="submit" class="btn-search">Search</button>
-        </form>
-    </div>
-
-    <div class="container">
+    <!-- Marketplace Listings -->
+    <div class="marketplace-section">
+        <h2 class="section-title">Featured Listings</h2>
+        <div class="container"
         <?php
         // Handle search
         $search = isset($_GET['search']) ? mysqli_real_escape_string($conn, trim($_GET['search'])) : '';
@@ -56,9 +88,27 @@
         if (mysqli_num_rows($result) > 0) {
             while($row = mysqli_fetch_assoc($result)) {
                 $status = $row['status'];
+                $item_id = $row['id'];
+                
+                // Fetch all images for this item
+                $img_query = "SELECT image_path FROM item_images WHERE item_id = $item_id ORDER BY created_at ASC";
+                $img_result = mysqli_query($conn, $img_query);
+                
+                $images = [];
+                while($img_row = mysqli_fetch_assoc($img_result)) {
+                    $images[] = $img_row['image_path'];
+                }
+                
+                // If no images in item_images table, use the legacy image_path
+                if (empty($images) && !empty($row['image_path'])) {
+                    $images[] = $row['image_path'];
+                }
+                
+                // Use first image for card display
+                $displayImage = !empty($images) ? $images[0] : 'placeholder.png';
                 ?>
                 <div class="card">
-                    <img src="uploads/<?php echo $row['image_path']; ?>" alt="Item Image">
+                    <img src="uploads/<?php echo htmlspecialchars($displayImage); ?>" alt="Item Image" onclick="openModal(<?php echo $item_id; ?>, <?php echo htmlspecialchars(json_encode($images)); ?>, <?php echo htmlspecialchars(json_encode($row['item_name'])); ?>, <?php echo htmlspecialchars(json_encode($row['description'])); ?>, <?php echo htmlspecialchars(json_encode($row['price'])); ?>, <?php echo htmlspecialchars(json_encode($row['phone_number'])); ?>, <?php echo htmlspecialchars(json_encode($status)); ?>)">
                     
                     <div class="card-content">
                         <span class="status-badge <?php echo ($status == 'Available') ? 'available' : 'reserved'; ?>">
@@ -69,8 +119,8 @@
                         <h3><?php echo htmlspecialchars($row['item_name']); ?></h3>
                         <p><?php echo htmlspecialchars($row['description']); ?></p>
                         
-                        <a href="tel:<?php echo $row['phone_number']; ?>" class="phone">
-                            📞 Contact Owner: <?php echo $row['phone_number']; ?>
+                        <a href="tel:<?php echo htmlspecialchars($row['phone_number']); ?>" class="phone">
+                            📞 Contact: <?php echo htmlspecialchars($row['phone_number']); ?>
                         </a>
                     </div>
                 </div>
@@ -78,16 +128,182 @@
             }
         } else {
             echo "<div style='grid-column: 1/-1; text-align: center; padding: 50px;'>
-                    <h3>No items available for management at this time.</h3>
+                    <h3>No items available at this time.</h3>
+                    <p style='color: var(--text-lighter);'>Be the first to list something!</p>
                   </div>";
         }
         ?>
+        </div>
+    </div>
+
+    <!-- Image Review Modal -->
+    <div id="imageModal" class="modal">
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <div>
+                    <span class="modal-label">Review Item</span>
+                    <h2 id="modalTitle"></h2>
+                </div>
+                <span class="close" onclick="closeModal()">&times;</span>
+            </div>
+            <div class="modal-inner">
+                <div class="modal-left">
+                    <div class="image-frame">
+                        <img id="modalImage" class="slider-image" src="" alt="Item image">
+                        <button class="modal-navigation prev" onclick="changeImage(-1)">&#10094;</button>
+                        <button class="modal-navigation next" onclick="changeImage(1)">&#10095;</button>
+                    </div>
+                    <div class="thumbnail-row" id="thumbnailRow"></div>
+                </div>
+                <div class="modal-right">
+                    <div class="review-details">
+                        <div class="detail-row"><strong>Status:</strong> <span id="modalStatus"></span></div>
+                        <div class="detail-row"><strong>Price:</strong> <span id="modalPrice"></span></div>
+                        <div class="detail-row"><strong>Description:</strong></div>
+                        <p id="modalDescription"></p>
+                        <div class="detail-row"><strong>Contact:</strong> <a href="#" id="modalContact" class="contact-link"></a></div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
+        // Modal variables
+        let currentImages = [];
+        let currentIndex = 0;
+        let currentItemName = '';
+
+        function openModal(itemId, images, itemName, description, price, phone, status) {
+            currentImages = images;
+            currentIndex = 0;
+            currentItemName = itemName;
+
+            const modal = document.getElementById('imageModal');
+            const modalImg = document.getElementById('modalImage');
+            const title = document.getElementById('modalTitle');
+            const desc = document.getElementById('modalDescription');
+            const priceEl = document.getElementById('modalPrice');
+            const contact = document.getElementById('modalContact');
+            const statusEl = document.getElementById('modalStatus');
+            const thumbnailRow = document.getElementById('thumbnailRow');
+
+            modal.style.display = 'block';
+            title.textContent = currentItemName;
+            desc.textContent = description;
+            priceEl.textContent = '$' + Number(price).toFixed(2);
+            contact.textContent = phone;
+            contact.href = 'tel:' + phone;
+            statusEl.textContent = status;
+
+            updateModalImage();
+            renderThumbnails();
+            updateNavigationButtons();
+        }
+
+        function updateModalImage() {
+            const modalImg = document.getElementById('modalImage');
+            modalImg.src = 'uploads/' + currentImages[currentIndex];
+        }
+
+        function closeModal() {
+            document.getElementById('imageModal').style.display = 'none';
+        }
+
+        function changeImage(direction) {
+            currentIndex += direction;
+            if (currentIndex >= currentImages.length) {
+                currentIndex = 0;
+            } else if (currentIndex < 0) {
+                currentIndex = currentImages.length - 1;
+            }
+            updateModalImage();
+            highlightThumbnail();
+            updateNavigationButtons();
+        }
+
+        function renderThumbnails() {
+            const row = document.getElementById('thumbnailRow');
+            row.innerHTML = '';
+            currentImages.forEach((img, index) => {
+                const thumb = document.createElement('img');
+                thumb.src = 'uploads/' + img;
+                thumb.alt = currentItemName + ' thumbnail ' + (index + 1);
+                thumb.className = 'thumbnail-item' + (index === currentIndex ? ' active' : '');
+                thumb.addEventListener('click', function() {
+                    currentIndex = index;
+                    updateModalImage();
+                    highlightThumbnail();
+                    updateNavigationButtons();
+                });
+                row.appendChild(thumb);
+            });
+        }
+
+        function highlightThumbnail() {
+            document.querySelectorAll('.thumbnail-item').forEach((thumb, index) => {
+                thumb.classList.toggle('active', index === currentIndex);
+            });
+        }
+
+        function updateNavigationButtons() {
+            const prevBtn = document.querySelector('.prev');
+            const nextBtn = document.querySelector('.next');
+            if (currentImages.length <= 1) {
+                prevBtn.style.display = 'none';
+                nextBtn.style.display = 'none';
+            } else {
+                prevBtn.style.display = 'block';
+                nextBtn.style.display = 'block';
+            }
+        }
+
+        // Close modal when clicking outside the dialog
+        document.getElementById('imageModal').addEventListener('click', function(event) {
+            if (event.target === this) {
+                closeModal();
+            }
+        });
+
+        // Keyboard navigation
+        document.addEventListener('keydown', function(event) {
+            const modal = document.getElementById('imageModal');
+            if (modal.style.display === 'block') {
+                if (event.key === 'ArrowLeft') {
+                    changeImage(-1);
+                } else if (event.key === 'ArrowRight') {
+                    changeImage(1);
+                } else if (event.key === 'Escape') {
+                    closeModal();
+                }
+            }
+        });
+
+        // Profile dropdown and theme functionality
         document.addEventListener('DOMContentLoaded', function() {
             var profileButton = document.querySelector('.profile-button');
             var dropdownMenu = document.querySelector('.dropdown-menu');
+            var themeToggle = document.getElementById('themeToggle');
+            var savedTheme = localStorage.getItem('inventoryTheme') || 'light';
+
+            function applyTheme(theme) {
+                if (theme === 'dark') {
+                    document.body.classList.add('dark-theme');
+                    themeToggle.textContent = '☀️';
+                } else {
+                    document.body.classList.remove('dark-theme');
+                    themeToggle.textContent = '🌙';
+                }
+                localStorage.setItem('inventoryTheme', theme);
+            }
+
+            applyTheme(savedTheme);
+
+            if (themeToggle) {
+                themeToggle.addEventListener('click', function() {
+                    applyTheme(document.body.classList.contains('dark-theme') ? 'light' : 'dark');
+                });
+            }
 
             if (!profileButton || !dropdownMenu) {
                 return;

@@ -27,7 +27,6 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] != 1) {
             </div>
             <div class="actions">
                 <a class="btn" href="index.php">← Back to Store</a>
-                <button type="button" class="theme-toggle" id="themeToggle">Toggle Light Mode</button>
             </div>
         </div>
 
@@ -80,8 +79,6 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] != 1) {
 <script>
     const searchInput = document.getElementById('searchInput');
     const rows = document.querySelectorAll('tbody tr');
-    const themeToggle = document.getElementById('themeToggle');
-    const html = document.documentElement;
 
     function filterTable() {
         const query = searchInput.value.trim().toLowerCase();
@@ -91,19 +88,17 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] != 1) {
         });
     }
 
-    function updateThemeLabel() {
-        const dark = html.classList.contains('light-mode');
-        themeToggle.textContent = dark ? 'Toggle Dark Mode' : 'Toggle Light Mode';
+    function applySavedTheme() {
+        const savedTheme = localStorage.getItem('inventoryTheme') || 'dark';
+        if (savedTheme === 'light') {
+            document.body.classList.add('light-theme');
+        } else {
+            document.body.classList.remove('light-theme');
+        }
     }
 
     searchInput.addEventListener('input', filterTable);
-
-    themeToggle.addEventListener('click', () => {
-        html.classList.toggle('light-mode');
-        updateThemeLabel();
-    });
-
-    updateThemeLabel();
+    applySavedTheme();
 </script>
 </body>
 </html>

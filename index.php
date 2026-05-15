@@ -27,6 +27,27 @@
         </div>
     </nav>
 
+<?php
+    // Search and category filters
+    $search = isset($_GET['search']) ? mysqli_real_escape_string($conn, trim($_GET['search'])) : '';
+    $selectedCategory = isset($_GET['category']) ? trim($_GET['category']) : 'All';
+    $allowedCategories = ['All', 'Clothing & Accessories', 'Electronics & Gadgets', 'Home & Furniture', 'Vehicles & Parts', 'Books & Media', 'Sports & Leisure', 'Collectibles & Antiques', 'Appliances', 'Jewelry & Watches', 'Toys & Games', 'Other'];
+    if (!in_array($selectedCategory, $allowedCategories, true)) {
+        $selectedCategory = 'All';
+    }
+
+    $categoryColumnExists = false;
+    $colResult = mysqli_query($conn, "SHOW COLUMNS FROM items LIKE 'category'");
+    if ($colResult && mysqli_num_rows($colResult) > 0) {
+        $categoryColumnExists = true;
+    }
+    if (!$categoryColumnExists) {
+        $selectedCategory = 'All';
+    }
+
+    $searchParam = isset($_GET['search']) && $_GET['search'] !== '' ? '&search=' . urlencode($_GET['search']) : '';
+?>
+
     <!-- Hero Section -->
     <section class="hero">
         <div class="hero-content">
@@ -59,10 +80,23 @@
     <div class="search-section" id="marketplace">
         <div class="search-container">
             <form method="GET" action="index.php">
+                <input type="hidden" name="category" value="<?php echo htmlspecialchars($selectedCategory); ?>">
                 <input type="text" name="search" placeholder="Search for products..." value="<?php echo isset($_GET['search']) ? htmlspecialchars($_GET['search']) : ''; ?>">
                 <button type="submit" class="btn-search">Search</button>
             </form>
         </div>
+
+        <div class="category-filters">
+            <?php foreach ($allowedCategories as $category):
+                $queryString = 'index.php?category=' . urlencode($category) . $searchParam;
+                $activeClass = $category === $selectedCategory ? ' active' : '';
+            ?>
+                <a href="<?php echo htmlspecialchars($queryString); ?>" class="category-button<?php echo $activeClass; ?>">
+                    <?php echo htmlspecialchars($category); ?>
+                </a>
+            <?php endforeach; ?>
+        </div>
+
         <div class="upload-link">
             <a href="upload.php" class="btn-primary">+ List Your Item</a>
         </div>
@@ -71,15 +105,21 @@
     <!-- Marketplace Listings -->
     <div class="marketplace-section">
         <h2 class="section-title">Featured Listings</h2>
-        <div class="container"
-        <?php
-        // Handle search
-        $search = isset($_GET['search']) ? mysqli_real_escape_string($conn, trim($_GET['search'])) : '';
+        <div class="container"></div>
 
-        // Updated Query: Show everything except SOLD items, with optional search
-        $query = "SELECT * FROM items WHERE status != 'Sold'";
+        <?php
+        // Build marketplace query using search and category filters
+        $query = "SELECT items.*, 
+                         (SELECT COUNT(*) FROM item_likes WHERE item_likes.item_id = items.id) AS likes_count,
+                         CASE WHEN " . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 0) . " > 0 THEN 
+                             (SELECT COUNT(*) FROM item_likes WHERE item_likes.item_id = items.id AND item_likes.user_id = " . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 0) . ") 
+                         ELSE 0 END AS user_liked
+                  FROM items WHERE status != 'Sold'";
         if ($search) {
             $query .= " AND (item_name LIKE '%$search%' OR description LIKE '%$search%')";
+        }
+        if ($selectedCategory !== 'All' && $categoryColumnExists) {
+            $query .= " AND category = '" . mysqli_real_escape_string($conn, $selectedCategory) . "'";
         }
         $query .= " ORDER BY created_at DESC";
 
@@ -91,12 +131,14 @@
                 $item_id = $row['id'];
                 
                 // Fetch all images for this item
-                $img_query = "SELECT image_path FROM item_images WHERE item_id = $item_id ORDER BY created_at ASC";
-                $img_result = mysqli_query($conn, $img_query);
-                
                 $images = [];
-                while($img_row = mysqli_fetch_assoc($img_result)) {
-                    $images[] = $img_row['image_path'];
+                $tableExists = mysqli_query($conn, "SHOW TABLES LIKE 'item_images'");
+                if ($tableExists && mysqli_num_rows($tableExists) > 0) {
+                    $img_query = "SELECT image_path FROM item_images WHERE item_id = $item_id ORDER BY created_at ASC";
+                    $img_result = mysqli_query($conn, $img_query);
+                    while($img_row = mysqli_fetch_assoc($img_result)) {
+                        $images[] = $img_row['image_path'];
+                    }
                 }
                 
                 // If no images in item_images table, use the legacy image_path
@@ -111,23 +153,36 @@
                     <img src="uploads/<?php echo htmlspecialchars($displayImage); ?>" alt="Item Image" onclick="openModal(<?php echo $item_id; ?>, <?php echo htmlspecialchars(json_encode($images)); ?>, <?php echo htmlspecialchars(json_encode($row['item_name'])); ?>, <?php echo htmlspecialchars(json_encode($row['description'])); ?>, <?php echo htmlspecialchars(json_encode($row['price'])); ?>, <?php echo htmlspecialchars(json_encode($row['phone_number'])); ?>, <?php echo htmlspecialchars(json_encode($status)); ?>)">
                     
                     <div class="card-content">
-                        <span class="status-badge <?php echo ($status == 'Available') ? 'available' : 'reserved'; ?>">
-                            <?php echo $status; ?>
-                        </span>
+                        <div class="card-header">
+                            <span class="status-badge <?php echo ($status == 'Available') ? 'available' : 'reserved'; ?>">
+                                <?php echo $status; ?>
+                            </span>
+                            <span class="category-pill"><?php echo htmlspecialchars($row['category'] ?? 'General'); ?></span>
+                        </div>
 
-                        <span class="price">$<?php echo number_format($row['price'], 2); ?></span>
-                        <h3><?php echo htmlspecialchars($row['item_name']); ?></h3>
-                        <p><?php echo htmlspecialchars($row['description']); ?></p>
-                        
-                        <a href="tel:<?php echo htmlspecialchars($row['phone_number']); ?>" class="phone">
-                            📞 Contact: <?php echo htmlspecialchars($row['phone_number']); ?>
-                        </a>
+                        <div class="card-body">
+                            <span class="price">$<?php echo number_format($row['price'], 2); ?></span>
+                            <h3><?php echo htmlspecialchars($row['item_name']); ?></h3>
+                            <p><?php echo htmlspecialchars($row['description']); ?></p>
+                        </div>
+
+                        <div class="card-footer">
+                            <a href="tel:<?php echo htmlspecialchars($row['phone_number']); ?>" class="phone">
+                                📞 Contact: <?php echo htmlspecialchars($row['phone_number']); ?>
+                            </a>
+                            <div class="like-section">
+                                <button class="like-btn <?php echo $row['user_liked'] ? 'liked' : ''; ?>" data-item-id="<?php echo $row['id']; ?>">
+                                    ❤️ <span class="like-count"><?php echo $row['likes_count']; ?></span>
+                                </button>
+                                <button class="btn-secondary" onclick="openModal(<?php echo $item_id; ?>, <?php echo htmlspecialchars(json_encode($images)); ?>, <?php echo htmlspecialchars(json_encode($row['item_name'])); ?>, <?php echo htmlspecialchars(json_encode($row['description'])); ?>, <?php echo htmlspecialchars(json_encode($row['price'])); ?>, <?php echo htmlspecialchars(json_encode($row['phone_number'])); ?>, <?php echo htmlspecialchars(json_encode($status)); ?>)">View Details</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <?php
             }
         } else {
-            echo "<div style='grid-column: 1/-1; text-align: center; padding: 50px;'>
+            echo "<div style='text-align: center; padding: 50px;'>
                     <h3>No items available at this time.</h3>
                     <p style='color: var(--text-lighter);'>Be the first to list something!</p>
                   </div>";
@@ -257,6 +312,73 @@
                 nextBtn.style.display = 'block';
             }
         }
+
+        // Like functionality
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('like-btn') || e.target.closest('.like-btn')) {
+                e.preventDefault();
+                const btn = e.target.closest('.like-btn');
+                const itemId = btn.dataset.itemId;
+                const countSpan = btn.querySelector('.like-count');
+
+                fetch('like_system.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: 'item_id=' + itemId
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        countSpan.textContent = data.count;
+                        if (data.liked) {
+                            btn.classList.add('liked');
+                        } else {
+                            btn.classList.remove('liked');
+                        }
+                    } else {
+                        alert(data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred. Please try again.');
+                });
+            }
+        });
+
+        // Theme toggle functionality
+        const themeToggle = document.getElementById('themeToggle');
+        const savedTheme = localStorage.getItem('inventoryTheme') || 'light';
+        document.body.classList.toggle('dark-theme', savedTheme === 'dark');
+        themeToggle.textContent = savedTheme === 'dark' ? '☀️' : '🌙';
+
+        themeToggle.addEventListener('click', function() {
+            const isDark = document.body.classList.toggle('dark-theme');
+            const newTheme = isDark ? 'dark' : 'light';
+            localStorage.setItem('inventoryTheme', newTheme);
+            themeToggle.textContent = isDark ? '☀️' : '🌙';
+        });
+
+        // Profile menu functionality
+        const profileButton = document.querySelector('.profile-button');
+        const profileMenu = document.getElementById('profile-menu');
+
+        profileButton.addEventListener('click', function() {
+            const isExpanded = profileButton.getAttribute('aria-expanded') === 'true';
+            profileButton.setAttribute('aria-expanded', !isExpanded);
+            profileMenu.classList.toggle('open');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!profileButton.contains(e.target) && !profileMenu.contains(e.target)) {
+                profileButton.setAttribute('aria-expanded', 'false');
+                profileMenu.classList.remove('open');
+            }
+        });
+    </script>
 
         // Close modal when clicking outside the dialog
         document.getElementById('imageModal').addEventListener('click', function(event) {

@@ -37,7 +37,7 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] != 1) {
             </div>
         </div>
 
-    <table>
+        <table>
         <thead>
             <tr>
                 <th>ID</th>
@@ -46,13 +46,14 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] != 1) {
                 <th>Description</th>
                 <th>Price</th>
                 <th>Contact info</th>
+                <th>Publisher</th>
                 <th>Date Posted</th>
             </tr>
         </thead>
         <tbody>
             <?php
-            // Fetch all items from the database
-            $sql = "SELECT * FROM items ORDER BY id DESC";
+            // Fetch all items from the database with publisher info
+            $sql = "SELECT items.*, users.username AS publisher FROM items LEFT JOIN users ON items.user_id = users.id ORDER BY items.id DESC";
             $result = mysqli_query($conn, $sql);
 
             if (mysqli_num_rows($result) > 0) {
@@ -65,11 +66,12 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] != 1) {
                     echo "<td>" . $row['description'] . "</td>";
                     echo "<td>$" . number_format($row['price'], 2) . "</td>";
                     echo "<td>" . $row['phone_number'] . "</td>";
+                    echo "<td>" . ($row['publisher'] ?? 'Unknown') . "</td>";
                     echo "<td>" . $row['created_at'] . "</td>";
                     echo "</tr>";
                 }
             } else {
-                echo "<tr><td colspan='7' style='text-align:center;'>No items found in database.</td></tr>";
+                echo "<tr><td colspan='8' style='text-align:center;'>No items found in database.</td></tr>";
             }
             ?>
         </tbody>

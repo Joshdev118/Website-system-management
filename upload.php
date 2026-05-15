@@ -52,6 +52,23 @@ if (!isset($_SESSION['user_id'])) {
                 </div>
 
                 <div>
+                    <label for="category">Category</label>
+                    <select id="category" name="category" required>
+                        <option value="Clothing & Accessories">Clothing & Accessories</option>
+                        <option value="Electronics & Gadgets">Electronics & Gadgets</option>
+                        <option value="Home & Furniture">Home & Furniture</option>
+                        <option value="Vehicles & Parts">Vehicles & Parts</option>
+                        <option value="Books & Media">Books & Media</option>
+                        <option value="Sports & Leisure">Sports & Leisure</option>
+                        <option value="Collectibles & Antiques">Collectibles & Antiques</option>
+                        <option value="Appliances">Appliances</option>
+                        <option value="Jewelry & Watches">Jewelry & Watches</option>
+                        <option value="Toys & Games">Toys & Games</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+
+                <div>
                     <label for="phone">Phone Number</label>
                     <input id="phone" type="text" name="phone" placeholder="Enter phone number" required>
                 </div>
@@ -60,7 +77,7 @@ if (!isset($_SESSION['user_id'])) {
                     <label for="images">Product Images (up to 5)</label>
                     <div class="image-upload-container">
                         <input id="images" type="file" name="images[]" accept="image/*" multiple required>
-                        <p class="image-help-text">You can upload up to 5 images. Supported formats: JPG, PNG, GIF, WebP</p>
+                        <p class="image-help-text">Hold Ctrl/Cmd to select multiple images. You can upload up to 5 images. Supported formats: JPG, PNG, GIF, WebP.</p>
                         <div id="imagePreview" class="image-preview-grid"></div>
                     </div>
                 </div>
